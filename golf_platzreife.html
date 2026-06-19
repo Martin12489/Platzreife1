@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offizieller DGV Platzreife-Prüfungstrainer (30 Fragen)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f1;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 750px;
+            margin: 20px auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            color: #1e4229;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #555;
+            font-size: 0.95em;
+            margin-bottom: 25px;
+        }
+        .category-badge {
+            display: inline-block;
+            background-color: #e2ede4;
+            color: #2c5e3b;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .progress {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.95em;
+        }
+        .question {
+            font-size: 1.25em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #111;
+        }
+        .answers {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn-answer {
+            background-color: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: left;
+            font-size: 0.98em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-answer:hover:not([disabled]) {
+            background-color: #f7faf8;
+            border-color: #2c5e3b;
+        }
+        .correct {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724;
+            font-weight: bold;
+        }
+        .wrong {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24;
+        }
+        .btn-next {
+            display: block;
+            width: 100%;
+            background-color: #2c5e3b;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: background 0.2s;
+        }
+        .btn-next:hover {
+            background-color: #1e4229;
+        }
+        .hidden {
+            display: none;
+        }
+        .result-box {
+            text-align: center;
+            padding: 20px;
+        }
+        .score {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c5e3b;
+            margin: 20px 0;
+        }
+        .pass-status {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⛳ DGV Platzreife-Simulator</h1>
+    <div class="subtitle">Echte Prüfungssimulation mit 30 zufällig gemischten Regelfragen</div>
+    <hr style="border: 0; border-top: 1px solid #ddd; margin-bottom: 20px;">
+
+    <!-- Quiz Bereich -->
+    <div id="quiz-area">
+        <div id="category" class="category-badge">Kategorie</div>
+        <div class="progress">Frage <span id="current-num">1</span> von <span id="total-num">30</span></div>
+        <div class="question" id="question-text">Hier steht die Frage?</div>
+        <div class="answers" id="answer-buttons"></div>
+        <button id="next-btn" class="btn-next hidden">Nächste Frage</button>
+    </div>
+
+    <!-- Ergebnis Bereich -->
+    <div id="result-area" class="hidden result-box">
+        <h2>Prüfungsergebnis</h2>
+        <div class="score"><span id="correct-score">0</span> / 30</div>
+        <div id="pass-status" class="pass-status"></div>
+        <p id="feedback-text"></p>
+        <button onclick="location.reload()" class="btn-next">Prüfung wiederholen (Fragen neu mischen)</button>
+    </div>
+</div>
+
+<script>
+    // 30 Originalgetreue DGV-Prüfungsfragen (Regeln, Etikette, Handicap)
+    const masterQuestions = [
+        // --- ETIKETTE & SICHERHEIT ---
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Wann dürfen Sie einen Übungsschwung in Richtung anderer Spieler machen?",
+            a: ["Niemals. Übungsschwünge dürfen niemals in Richtung von Personen ausgeführt werden (Gefahr von Steinen/Dreck).", "Nur, wenn man weit genug weg steht.", "Immer, sofern man keinen Ball vor sich liegen hat."],
+            c: 0
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Was bedeutet der Warnruf 'FORE'?",
+            a: ["Dass ein Spieler ein 'Hole-in-One' geschlagen hat.", "Achtung, Gefahr von fliegenden Bällen! Sofort ducken, Kopf schützen und wegdrehen.", "Der vorausgehende Flight signalisiert, dass das Grün frei ist."],
+            c: 1
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Ihre Gruppe verliert den Anschluss nach vorne und blockiert die nachfolgende Gruppe. Was tun Sie?",
+            a: ["Wir spielen schneller, lassen die Gruppe hinter uns aber keinesfalls durch.", "Wir bieten der nachfolgenden Gruppe sofort und unaufgefordert das Durchspielen an.", "Wir ignorieren die Gruppe hinter uns, da jeder sein eigenes Tempo spielen darf."],
+            c: 1
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Wo stellen Sie Ihre Golftasche oder Ihren Trolley ab, wenn Sie das Grün betreten?",
+            a: ["Möglichst nah an der Fahne.", "Auf dem Grün, sofern die Räder sauber sind.", "Abseits des Grüns, und zwar auf der Seite, die zum nächsten Abschlag führt."],
+            c: 2
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Was müssen Sie tun, nachdem Sie aus einem Sandbunker herausgespielt haben?",
+            a: ["Den Bunker sofort verlassen; das Einebnen übernimmt das Greenkeeping-Personal.", "Alle von mir verursachten Unebenheiten und Fußspuren mit der Harke sorgfältig einebnen.", "Nur die tiefen Spuren mit dem Fuß glattschieben."],
+            c: 1
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Eine herausgeschlagene Grasnarbe (Divot) auf dem Fairway...",
+            a: ["...muss sofort zurückgelegt und festgetreten werden.", "...sollte liegen gelassen werden, damit neues Gras nachwächst.", "...muss in den nächsten Papierkorb geworfen werden."],
+            c: 0
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Wann darf auf dem Abschlag abgeschlagen werden?",
+            a: ["Sobald die Spieler vor einem außer Reichweite des eigenen Schlags sind.", "Sobald die Spieler vor einem das Grün erreicht haben.", "Sobald man sich bereit fühlt, egal wo die anderen stehen."],
+            c: 0
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Was sind Pitchmarken und wie ist mit ihnen umzugehen?",
+            a: ["Einschlaglöcher von Bällen auf dem Grün. Jeder Spieler muss seine eigene und am besten eine weitere Pitchmarke mit der Pitchgabel ausbessern.", "Spuren von Trolleys im Semirough; sie heilen von alleine.", "Kratzer auf dem Schlägerblatt; sie müssen poliert werden."],
+            c: 0
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Darf man auf dem Golfplatz mit dem Mobiltelefon lautstark telefonieren?",
+            a: ["Ja, das ist überall uneingeschränkt erlaubt.", "Nein, das Telefon sollte stummgeschaltet sein, um andere Spieler nicht in der Konzentration zu stören.", "Nur auf dem Grün."],
+            c: 1
+        },
+        {
+            cat: "Etikette & Sicherheit",
+            q: "Wer hat auf dem Golfplatz bei der Platzpflege absolutes Vorrecht?",
+            a: ["Die Spieler im Turnier.", "Das Greenkeeping-Personal (Platzarbeiter). Sicherheit geht vor, Spieler müssen warten, bis die Arbeiter winken.", "Gäste vor Clubmitgliedern."],
+            c: 1
+        },
+
+        // --- REGELN ---
+        {
+            cat: "Golfregeln",
+            q: "Welche Farbe haben Pfähle oder Linien, die eine 'Penalty Area' (früher Wasserhindernis) kennzeichnen?",
+            a: ["Weiß", "Gelb oder Rot", "Blau"],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ihr Ball liegt im 'Aus' (gekennzeichnet durch weiße Pfähle). Wie müssen Sie weiterspielen?",
+            a: ["Mit einem Strafschlag Erleichterung nehmen und den Ball zwei Schlägerlängen seitlich droppen.", "Einen Ball nahe der Stelle droppen, an der er ins Aus geflogen ist.", "Mit einem Strafschlag dorthin zurückgehen, wo der letzte Schlag gemacht wurde (Schlag und Distanzverlust)."],
+            c: 2
+        },
+        {
+            cat: "Golfregeln",
+            q: "Wie lange darf maximal nach einem verloren geglaubten Ball gesucht werden?",
+            a: ["5 Minuten", "3 Minuten (ab Beginn der Suche)", "Es gibt kein Zeitlimit, solange man nachfolgende Gruppen durchwinkt."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ein Ball liegt an einem weißen Auspfosten. Der Pfosten behindert den Schwung. Darf der Pfosten herausgezogen werden?",
+            a: ["Nein, Auspfosten sind feste Grenzen. Es gibt keine straflose Erleichterung.", "Ja, wenn er sich leicht bewegen lässt.", "Ja, aber nur mit Zustimmung des Zählers."],
+            c: 0
+        },
+        {
+            cat: "Golfregeln",
+            q: "Beim droppen eines Balles (z.B. bei Erleichterung) muss der Ball aus welcher Höhe fallengelassen werden?",
+            a: ["Aus Schulterhöhe.", "Aus Kniehöhe (aufrecht stehend).", "Direkt vom Boden aus gelegt werden."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Was passiert, wenn Sie aus Versehen den Ball Ihres Mitspielers schlagen (falscher Ball) im Zählspiel?",
+            a: ["Keine Strafe, die Schläge zählen einfach für meinen Mitspieler.", "Ich erhalte zwei Strafschläge und muss den Fehler korrigieren, indem ich meinen eigenen Ball weiterspiele.", "Disqualifikation."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ihr Ball liegt auf dem Fairway in einem tiefen Loch (z.B. von einem Hund gegraben). Bekommen Sie straflose Erleichterung?",
+            a: ["Nein, das ist Pech ('wie der Ball liegt').", "Ja, von Löchern tierischer Urheber (außer Insekten) gibt es straflose Erleichterung.", "Nur wenn es im Vorfeld durch eine Platzregel erlaubt wurde."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Darf ein Ball auf dem Grün gereinigt werden?",
+            a: ["Nein, das ist streng verboten.", "Ja, nachdem seine Lage markiert wurde, darf er aufgenommen und gereinigt werden.", "Nur, wenn Schlamm am Ball klebt."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ein Spieler schlägt seinen Ball vom Abschlag ins dichte Unterholz. Er ist unsicher, ob er ihn wiederfindet. Was sollte er tun?",
+            a: ["Sofort nach vorne gehen und bei Verlust zurückkommen.", "Einen provisorischen Ball spielen, bevor er nach vorne geht, um Zeit zu sparen.", "Das Loch als verloren erklären."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ihr Ball bewegt sich im Wind auf dem Fairway von selbst, nachdem Sie ihn bereits angesprochen (bereitgestellt) haben. Was gilt?",
+            a: ["Sie erhalten einen Strafschlag und müssen ihn zurücklegen.", "Straflose Erleichterung; der Ball wird von der neuen Stelle gespielt.", "Keine Strafe; der Ball wird einfach von der neuen Stelle gespielt."],
+            c: 2
+        },
+        {
+            cat: "Golfregeln",
+            q: "Was zählt als 'loses Naturhemnis'?",
+            a: ["Festsitzende Äste und verankerte Pflanzen.", "Abgefallene Blätter, Zweige, Steine und loser Sand (außer auf dem Grün).", "Auspfosten und Entfernungsmarker."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Was ist ein 'bewegliches Hemmnis'?",
+            a: ["Ein künstlicher Gegenstand wie eine weggeworfene Coladose oder eine Harke, die ohne Mühe weggeschoben werden kann.", "Ein großer Strauch im Wind.", "Ein freilaufender Hund."],
+            c: 0
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ihr Ball liegt unspielbar im Gebüsch. Sie entscheiden sich für die Erleichterung mit zwei Schlägerlängen (mit 1 Strafschlag). Wo darf der Ball hin gedroppt werden?",
+            a: ["Nicht näher zum Loch als die ursprüngliche Stelle des Balls.", "Überall hin, Hauptsache er ist aus dem Gebüsch raus.", "Immer auf das Fairway."],
+            c: 0
+        },
+        {
+            cat: "Golfregeln",
+            q: "Ein Spieler trifft beim Schlag versehentlich zweimal den Ball (Doppelschlag). Wie wird das gezählt?",
+            a: ["Der Schlag zählt als zwei Schläge.", "Der Schlag zählt nur als ein Schlag. Es gibt seit 2019 keine Zusatzstrafe mehr.", "Der Schlag muss wiederholt werden."],
+            c: 1
+        },
+        {
+            cat: "Golfregeln",
+            q: "Wer teilt dem Spieler im Zählspiel seine Schlaganzahl offiziell zu (Zähler)?",
+            a: ["Der Spieler tippt es selbst in eine App, niemand kontrolliert.", "Ein zugewiesener Mitspieler (Zähler) notiert die Schläge nach jedem Loch auf der Scorekarte.", "Der Clubmanager nach der Runde."],
+            c: 1
+        },
+
+        // --- HANDICAP SYSTEM & SPIELFORMEN ---
+        {
+            cat: "Handicap-System",
+            q: "Welches Handicap erhält ein Golfanfänger nach bestandener Platzreife standardmäßig?",
+            a: ["Handicap 36", "Handicap 54", "Handicap 0"],
+            c: 1
+        },
+        {
+            cat: "Handicap-System",
+            q: "Was ist das Ziel des World Handicap Systems (WHS)?",
+            a: ["Dass nur Profis Turniere spielen dürfen.", "Es ermöglicht Golfern unterschiedlicher Spielstärke, fair und vergleichbar gegeneinander anzutreten.", "Es legt fest, wie teuer die Clubmitgliedschaft ist."],
+            c: 1
+        },
+        {
+            cat: "Handicap-System",
+            q: "Beim Spiel nach Stableford erhält man für ein Netto-Par wie viele Punkte?",
+            a: ["1 Punkt", "2 Punkte", "3 Punkte"],
+            c: 1
+        },
+        {
+            cat: "Handicap-System",
+            q: "Was bedeutet ein 'Netto-Ergebnis' im Vergleich zum 'Brutto-Ergebnis'?",
+            a: ["Brutto ist das Ergebnis ohne Abzug der persönlichen Vorgabe (Handicap). Netto berücksichtigt das Handicap.", "Netto ist das Ergebnis vor Steuern.", "Brutto zählt nur die Schläge auf den Löchern 1 bis 9."],
+            c: 0
+        },
+        {
+            cat: "Handicap-System",
+            q: "Wer unterschreibt am Ende einer vorgabenwirksamen Runde die Scorekarte?",
+            a: ["Nur der Spieler selbst.", "Nur der Zähler.", "Sowohl der Spieler (als Bewerber) als auch der Zähler."],
+            c: 2
+        }
+    ];
+
+    let quizData = [];
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const categoryEl = document.getElementById('category');
+    const currentNumEl = document.getElementById('current-num');
+    const totalNumEl = document.getElementById('total-num');
+    const questionTextEl = document.getElementById('question-text');
+    const answerButtonsEl = document.getElementById('answer-buttons');
+    const nextBtnEl = document.getElementById('next-btn');
+    
+    const quizAreaEl = document.getElementById('quiz-area');
+    const resultAreaEl = document.getElementById('result-area');
+    const correctScoreEl = document.getElementById('correct-score');
+    const passStatusEl = document.getElementById('pass-status');
+    const feedbackTextEl = document.getElementById('feedback-text');
+
+    // Fisher-Yates Shuffle zum Mischen der Fragen
+    function shuffleQuestions(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    function startQuiz() {
+        // Fragen kopieren und komplett durchmischen
+        quizData = shuffleQuestions([...masterQuestions]);
+        currentQuestionIndex = 0;
+        score = 0;
+        showQuestion();
+    }
+
+    function showQuestion() {
+        resetState();
+        let currentQuestion = quizData[currentQuestionIndex];
+        
+        categoryEl.innerText = currentQuestion.cat;
+        currentNumEl.innerText = currentQuestionIndex + 1;
+        questionTextEl.innerText = currentQuestion.q;
+
+        currentQuestion.a.forEach((answer, index) => {
+            const button = document.createElement('button');
+            button.innerText = answer;
+            button.classList.add('btn-answer');
+            button.addEventListener('click', () => selectAnswer(index, button));
+            answerButtonsEl.appendChild(button);
+        });
+    }
+
+    function resetState() {
+        nextBtnEl.classList.add('hidden');
+        while (answerButtonsEl.firstChild) {
+            answerButtonsEl.removeChild(answerButtonsEl.firstChild);
+        }
+    }
+
+    function selectAnswer(selectedIndex, clickedButton) {
+        const currentQuestion = quizData[currentQuestionIndex];
+        const correctIndex = currentQuestion.c;
+        const allButtons = answerButtonsEl.querySelectorAll('.btn-answer');
+
+        allButtons.forEach(btn => btn.disabled = true);
+
+        if (selectedIndex === correctIndex) {
+            clickedButton.classList.add('correct');
+            score++;
+        } else {
+            clickedButton.classList.add('wrong');
+            allButtons[correctIndex].classList.add('correct');
+        }
+
+        nextBtnEl.classList.remove('hidden');
+    }
+
+    nextBtnEl.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    function showResults() {
+        quizAreaEl.classList.add('hidden');
+        resultAreaEl.classList.remove('hidden');
+        correctScoreEl.innerText = score;
+
+        // Offizielle DGV-Bedingung: Bei 30 Fragen darf man max. 4 Regelfehler haben (also mindestens 26 richtig).
+        if (score >= 26) {
+            passStatusEl.innerText = "🎉 BESTANDEN!";
+            passStatusEl.style.color = "#28a745";
+            feedbackTextEl.innerText = `Hervorragend! Mit ${score} von 30 richtigen Antworten hättest du die theoretische DGV-Platzreife-Prüfung glanzvoll bestanden. Du bist bereit für den Golfplatz! 🏌️‍♂️⛳`;
+        } else {
+            passStatusEl.innerText = "❌ NICHT BESTANDEN";
+            passStatusEl.style.color = "#dc3545";
+            feedbackTextEl.innerText = `Für das Bestehen der echten Prüfung benötigst du mindestens 26 richtige Antworten (maximal 4 Fehler). Du hattest ${score} richtig. Wiederhole den Test einfach noch einmal – Übung macht den Meister! 📖`;
+        }
+    }
+
+    // Quiz beim Laden starten
+    startQuiz();
+</script>
+
+</body>
+</html>
